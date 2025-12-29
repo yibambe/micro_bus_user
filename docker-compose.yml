@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: mongo-local
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: developer
+      MONGO_INITDB_ROOT_PASSWORD: dev123
+      MONGO_INITDB_DATABASE: datums
+    volumes:
+      - ./data:/data/db
+      - ./init:/docker-entrypoint-initdb.d
+
+    # 🔽 LÍMITES DE RECURSOS AGREGADOS 🔽
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5' # Media CPU (50% de un núcleo)
+          memory: 512M # Máximo 512 MB RAM
+        reservations:
+          cpus: '0.25' # Reserva mínima de 25% CPU
+          memory: 256M # Reserva mínima de 256 MB RAM
+
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "mongodb://developer:dev123@127.0.0.1:27017/datums", "--eval", "db.runCommand({ ping: 1 }).ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s # Agregado: tiempo inicial antes de health checks
+
+# Volumen persistente (opcional)
+volumes:
+  mongo_data:
+    driver: local
